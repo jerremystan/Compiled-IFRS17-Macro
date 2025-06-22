@@ -1,0 +1,155 @@
+Private Const FolderPath = "D:\Stanley\Tugas IFRS17\ Reserving Macro Automation\\202406\Compiled IFRS17\"
+
+Private Const StartYear = "2009"
+Private Const EndYear = "2023"
+
+
+
+Sub ExcelChecker()
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    Dim wsr As Worksheet
+    Dim wbr As Workbook
+    'Dim ws As Worksheet
+    
+    Dim Year As Integer
+    
+    Dim newWB As Workbook
+    Dim newWS As Worksheet
+    
+    Dim wst As Worksheet
+    
+    Dim startFormula As String
+    Dim endFormula As String
+    Dim newFormula As String
+    
+    Dim lastRow As Integer
+    
+    Dim wsrc As Worksheet
+    Dim wbrc As Workbook
+    
+    Dim fileName As Variant
+    Dim TermArr As Variant
+
+    Dim k As Integer
+    Dim totalSheets As Integer
+    
+    Dim sheetNames As Variant
+    
+    
+    Set wst = ThisWorkbook.Sheets("Sheet1")
+    
+    lastRow = wst.Cells(wst.Rows.Count, 1).End(xlUp).Row - 2
+    
+    'MsgBox lastRow
+    
+    TermArr = Array("ST", "LT")
+
+    'MsgBox ColumnLetter(60)
+
+
+        
+        Application.Calculation = xlCalculationManual
+        
+        Set newWB = Workbooks.Add
+        'Set wbr = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro Checker for Compiled Files\" & FN & ".xlsx", UpdateLinks:=0)
+        'Set wbrc = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro Checker for Compiled Files\" & FN & " - Copy.xlsx", UpdateLinks:=0)
+        
+
+        
+        
+        
+'        For k = 1 To totalSheets
+'
+'            sheetNames(k) = wbrc.Sheets(k).Name
+'
+'        Next k
+
+
+
+            For i = 1 To lastRow
+
+                For j = 1 To 28 'Last Column for EP Final
+
+                    wst.Range(ColumnLetter(j + 2) & (i + 2)).Formula = "='\\fileserver\Accounting-In\ACTUARY SECTION\IBNR\202406\\Compiled\[Earned Premium.xlsx]EP'!" & ColumnLetter(j + 2) & (i + 2)
+                    
+                    Debug.Print "Total All EP" & "-" & i & "-" & j
+                    
+                Next j
+
+            Next i
+
+            Set newWS = newWB.Sheets.Add(After:=newWB.Sheets(newWB.Sheets.Count))
+            newWS.Name = "EP"
+
+            wst.Range("A1:" & ColumnLetter(35) & lastRow + 2).Copy
+            newWS.Range("A1:" & ColumnLetter(35) & lastRow + 2).PasteSpecial Paste:=xlPasteAll
+
+ 
+        
+        
+ 
+            
+            For i = 1 To lastRow
+                
+                Set newWS = newWB.Sheets("EP")
+                
+                For j = 1 To 28
+                    
+                    For Year = StartYear To EndYear
+    
+                        For Each Term In TermArr
+                    
+                            startFormula = newWS.Range(ColumnLetter(j + 2) & (i + 2)).Formula
+                            newFormula = "-'" & FolderPath & Year & "-" & Term & "\[Earned Premium.xlsx]EP'!" & ColumnLetter(j + 2) & (i + 2)
+                            endFormula = startFormula & newFormula
+                            newWS.Range(ColumnLetter(j + 2) & (i + 2)).Formula = endFormula
+                            
+                            Debug.Print "Detail All EP" & Year & Term & "-" & i & "-" & j
+                        
+                        Next Term
+        
+                    Next Year
+                        
+                Next j
+
+            Next i
+
+
+        
+        
+        
+        newWB.Sheets("Sheet1").Delete
+        'newWB.Sheets("Fire-XL").Delete
+        
+        
+        newWB.SaveAs fileName:=FolderPath & "Earned Premium" & " - Checker Set2.v.1.xlsx", FileFormat:=51
+        
+        Application.Calculation = xlCalculationAutomatic
+        
+        'wbr.Close SaveChanges:=False
+        'wbrc.Close SaveChanges:=False
+        
+        newWB.Close SaveChanges:=False
+
+    
+    MsgBox "Done"
+    
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+
+End Sub
+
+Function ColumnLetter(ColumnNumber As Integer) As String
+    Dim Letter As String
+    Letter = ""
+
+    ' Repeat the process of dividing by 26 to get the column letters
+    Do While ColumnNumber > 0
+        Letter = Chr(((ColumnNumber - 1) Mod 26) + 65) & Letter
+        ColumnNumber = (ColumnNumber - 1) \ 26
+    Loop
+    
+    ColumnLetter = Letter
+End Function
+
