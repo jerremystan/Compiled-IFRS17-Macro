@@ -1,0 +1,154 @@
+Private Const FolderPath = "D:\Stanley\Tugas IFRS17\Reserving Macro Automation\202406\Compiled IFRS17\"
+Private Const CompiledPath = "\\[Folder Name]\Compiled\"
+
+Private Const StartYear = "2009"
+Private Const EndYear = "2023"
+
+
+
+Sub ExcelChecker()
+    Application.Calculation = xlCalculationManual
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    
+    Dim wsr          As Worksheet
+    Dim wbr          As Workbook
+    'Dim ws          As Worksheet
+    Dim Year         As Integer
+    Dim newWB        As Workbook
+    Dim newWS        As Worksheet
+    Dim addWB        As Workbook
+    Dim addWS        As Worksheet
+    Dim wst          As Worksheet
+    Dim startFormula As String
+    Dim endFormula   As String
+    Dim newFormula   As String
+    Dim lastRow      As Integer
+    Dim wsrc         As Worksheet
+    Dim wbrc         As Workbook
+    Dim fileName     As Variant
+    Dim TermArr      As Variant
+    Dim k            As Integer
+    Dim totalSheets  As Integer
+    Dim sheetNames   As Variant
+    Dim StringOSGF As String
+    Dim StringOSNF As String
+    Dim StringPGF As String
+    Dim StringPNF As String
+    Dim NewOSGF As String
+    Dim NewOSNF As String
+    Dim NewPGF As String
+    Dim NewPNF As String
+    Dim TargetCell As String
+    Dim TargetRange As String
+    
+    Set wst = ThisWorkbook.Sheets("Sheet1")
+    
+    lastRow = wst.Cells(wst.Rows.Count, 1).End(xlUp).Row - 2
+    
+    'MsgBox lastRow
+    
+    'TermArr = Array("ST", "LT")
+    'fileName = Array("OSClaim-Gross")
+    'fileName = Array("OSClaim-Gross", "OSClaim-Net", "PaidClaim-Gross", "PaidClaim-Net")
+    
+    'sheetNames = Array("Auto", "Fire")
+    sheetNames = Array("Auto", "Auto-OD-PartialLoss", "Auto-OD-TotalLoss-MotorCycle", "Auto-OD-TotalLoss-NonMotorCycle", "Auto-TP", "Engineering", "Fire", "Marine-Other", "Marine-ECommerce", "Liability", "PA-Retail", "PA-Commercial", "Travel-Commercial", "Travel-Retail", "Trade Credit", "Various", "Health", "Various-Ecommerce", "Check")
+    
+    'MsgBox ColumnLetter(60)
+
+        
+    Set newWB = Workbooks.Add
+    
+    StringOSGF = "="
+    StringOSNF = "="
+    StringPGF = "="
+    StringPNF = "="
+
+    For Year = StartYear To EndYear
+        
+        For Each Term In Array("ST", "LT")
+            
+            StringOSGF = StringOSGF & "+ '" & FolderPath & Year & "-" & Term & "/" & "[OSClaim-Gross.xlsx]#Sheet#'!#TargetCell#"
+            StringOSNF = StringOSNF & "+ '" & FolderPath & Year & "-" & Term & "/" & "[OSClaim-Net.xlsx]#Sheet#'!#TargetCell#"
+            StringPGF = StringPGF & "+ SUM('" & FolderPath & Year & "-" & Term & "/" & "[PaidClaim-Gross.xlsx]#Sheet#'!#TargetRange#" & ")"
+            StringPNF = StringPNF & "+ SUM('" & FolderPath & Year & "-" & Term & "/" & "[PaidClaim-Net.xlsx]#Sheet#'!#TargetRange#" & ")"
+            
+        Next Term
+    
+    Next Year
+
+    For Each SN In sheetNames
+
+        For i = 1 To lastRow
+            
+            TargetCell = ColumnLetter(lastRow + 3 - i) & i + 1
+            TargetRange = "C" & i + 1 & ":" & ColumnLetter(lastRow + 3 - i) & i + 1
+            
+            NewOSGF = Replace(StringOSGF, "#Sheet#", SN)
+            NewOSNF = Replace(StringOSNF, "#Sheet#", SN)
+            NewPGF = Replace(StringPGF, "#Sheet#", SN)
+            NewPNF = Replace(StringPNF, "#Sheet#", SN)
+            
+            NewOSGF = Replace(NewOSGF, "#TargetCell#", TargetCell)
+            NewOSNF = Replace(NewOSNF, "#TargetCell#", TargetCell)
+            NewPGF = Replace(NewPGF, "#TargetRange#", TargetRange)
+            NewPNF = Replace(NewPNF, "#TargetRange#", TargetRange)
+            
+            wst.Cells(i + 2, 3).Formula = NewOSGF
+            wst.Cells(i + 2, 4).Formula = NewOSNF
+            wst.Cells(i + 2, 5).Formula = NewPGF
+            wst.Cells(i + 2, 6).Formula = NewPNF
+            wst.Cells(i + 2, 7).Formula = "='" & CompiledPath & "[OSClaim-Gross.xlsx]" & SN & "'!" & TargetCell
+            wst.Cells(i + 2, 8).Formula = "='" & CompiledPath & "[OSClaim-Net.xlsx]" & SN & "'!" & TargetCell
+            wst.Cells(i + 2, 9).Formula = "=SUM('" & CompiledPath & "[PaidClaim-Gross.xlsx]" & SN & "'!" & TargetRange & ")"
+            wst.Cells(i + 2, 10).Formula = "=SUM('" & CompiledPath & "[PaidClaim-Net.xlsx]" & SN & "'!" & TargetRange & ")"
+            
+            Debug.Print SN & "-" & i
+            
+        Next i
+
+        Set newWS = newWB.Sheets.Add(After:=newWB.Sheets(newWB.Sheets.Count))
+        newWS.Name = SN
+
+        wst.Range("A1:" & ColumnLetter(15) & lastRow + 3).Copy
+        newWS.Range("A1:" & ColumnLetter(15) & lastRow + 3).PasteSpecial Paste:=xlPasteAll
+
+    Next SN
+    
+    
+    newWB.Sheets("Sheet1").Delete
+    'newWB.Sheets("Fire-XL").Delete
+    
+    
+    
+    newWB.SaveAs fileName:=FolderPath & "ReconcileAllClaims.v.1.xlsx", FileFormat:=51
+    
+    'wbr.Close SaveChanges:=False
+    'wbrc.Close SaveChanges:=False
+    
+    newWB.Close SaveChanges:=False
+
+
+    
+    MsgBox "Done"
+    
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+End Sub
+
+Function ColumnLetter(ColumnNumber As Integer) As String
+    Dim Letter As String
+    Letter = ""
+
+    ' Repeat the process of dividing by 26 to get the column letters
+    Do While ColumnNumber > 0
+        Letter = Chr(((ColumnNumber - 1) Mod 26) + 65) & Letter
+        ColumnNumber = (ColumnNumber - 1) \ 26
+    Loop
+    
+    ColumnLetter = Letter
+End Function
+
+
