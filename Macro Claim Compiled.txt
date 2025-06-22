@@ -1,0 +1,421 @@
+Private Const ValDate = "202409"
+Private Const Anchor = "'\\[Location]\" & ValDate & "\Compiled\["
+
+
+Sub ConcatFormCL()
+    
+Dim FileArr As Variant
+Dim AutoArr As Variant
+Dim SheetArr As Variant
+Dim XLArr As Variant
+
+Dim wbNP As Workbook
+Dim wbR As Workbook
+Dim wbP As Workbook
+Dim wbF As Workbook
+Dim wsNP As Worksheet
+Dim wsR As Worksheet
+
+Dim ColInd As Integer
+
+Dim lastRow As Integer
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    
+    
+    FileArr = Array("PaidClaim-Net", "OSClaim-Net")
+    AutoArr = Array("Auto-OD-PartialLoss", "Auto-OD-TotalLoss-MotorCycle", "Auto-OD-TotalLoss-NonMotorCycle", "Auto-TP")
+    SheetArr = Array("Auto", "Engineering", "Fire", "Marine-Other", "Marine-ECommerce", "Trade Credit", "Various", "Various-Ecommerce")
+    XLArr = Array("Auto-XL", "Engineering-XL", "Fire-XL", "Marine-Other-XL", "Marine-ECommerce-XL", "Trade Credit-XL", "Various-Other-XL", "Various-Ecommerce-XL")
+    
+    'MsgBox UBound(SheetArr)
+    
+    For Each WB In FileArr
+        
+        Application.Calculation = xlCalculationManual
+        ' For Non Auto (wo Proportioned)
+        Set wbNP = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro making Net wo Non Proportional\" & WB & " - wo XL.xlsx", UpdateLinks:=3)
+        Set wbR = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro making Net wo Non Proportional\" & WB & ".Raw.xlsx", UpdateLinks:=3)
+        Set wbP = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro making Net wo Non Proportional\" & WB & ".Prior.xlsx", UpdateLinks:=3)
+        Set wbF = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro making Net wo Non Proportional\" & WB & ".xlsx", UpdateLinks:=3)
+        
+        
+        For i = 0 To UBound(SheetArr)
+            
+            Set wsNP = wbNP.Worksheets(SheetArr(i))
+            lastRow = wsNP.Cells(wsNP.Rows.Count, 1).End(xlUp).Row - 1
+            
+            For J = 1 To lastRow
+                
+                For k = 1 To lastRow + 1 - J
+                
+                Debug.Print WB & "-" & SheetArr(i) & "-j:" & J & "-k:" & k
+                
+                    OldForm = wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula
+                    NewForm = " - '[" & WB & ".Raw.xlsx]" & XLArr(i) & "'!$" & ColumnLetter(k + 2) & J + 1
+                    
+                    ConForm = OldForm & NewForm
+                    
+                    wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula = ConForm
+                    
+                Next k
+
+            Next J
+            
+            
+            
+        Next i
+
+        ' For Auto (Proportioned)
+        For i = 0 To UBound(AutoArr)
+            
+            Set wsNP = wbNP.Worksheets(AutoArr(i))
+            lastRow = wsNP.Cells(wsNP.Rows.Count, 1).End(xlUp).Row - 1
+            
+            For J = 1 To lastRow 'Row
+                
+                
+                For k = 1 To lastRow + 1 - J 'Column
+                
+                Debug.Print WB & "-" & AutoArr(i) & "-j:" & J & "-k:" & k
+                
+                    OldForm = wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula
+                    NewForm = " - IFERROR(('[" & WB & ".Raw.xlsx]Auto-XL'!$" & ColumnLetter(k + 2) & J + 1 & ")*(" & Anchor & WB & ".Raw.xlsx]" & AutoArr(i) & "'!" & ColumnLetter(k + 2) & J + 1 & "/SUM(" & Anchor & WB & ".Raw.xlsx]" & AutoArr(0) & "'!" & ColumnLetter(k + 2) & J + 1 & "," & Anchor & WB & ".Raw.xlsx]" & AutoArr(1) & "'!" & ColumnLetter(k + 2) & J + 1 & "," & Anchor & WB & ".Raw.xlsx]" & AutoArr(2) & "'!" & ColumnLetter(k + 2) & J + 1 & "," & Anchor & WB & ".Raw.xlsx]" & AutoArr(3) & "'!" & ColumnLetter(k + 2) & J + 1 & ")),0)"
+                    
+                    ConForm = OldForm & NewForm
+                    
+                    Debug.Print ConForm
+                    
+                    wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula = ConForm
+                    
+                    Next k
+
+            Next J
+                                    
+
+        Next i
+        
+        'for PA-Retail
+        Set wsNP = wbNP.Worksheets("PA-Retail")
+        lastRow = wsNP.Cells(wsNP.Rows.Count, 1).End(xlUp).Row - 1
+        
+        For J = 1 To 41
+            
+            For k = 1 To 42 - J 'Column
+            
+            Debug.Print WB & "-" & "PA-Retail" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula
+                NewForm = "- '[" & WB & ".Prior.xlsx]PA'!" & ColumnLetter(k + 2) & J + 1 & " * IFERROR(" & Anchor & ".Raw.xlsx]PA-XL'!" & ColumnLetter(k + 2) & J + 1 & " / (" & Anchor & ".Raw.xlsx]PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & "), 0)" & _
+                "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & ") / (" & Anchor & WB & ".Raw.xlsx]PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula = ConForm
+                
+                Next k
+
+        Next J
+        
+        
+        For J = 1 To 45 'Row
+            
+            If J > 42 Then
+            
+                ColInd = 4 + 42 - J
+            
+            Else
+                
+                ColInd = 4
+            
+            End If
+            
+            For k = 1 To ColInd 'Column
+            
+            Debug.Print WB & "-" & "PA-Retail" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(2 + 47 - k - J) & J + 1).Formula
+                NewForm = "-'[" & WB & ".Raw.xlsx]PA-XL'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & _
+                "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & ")/(" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(2 + 47 - k - J) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        For J = 1 To lastRow 'Row
+            
+            If J > 46 Then
+            
+                ColInd = lastRow + 1 - J
+            
+            Else
+                
+                ColInd = lastRow - 45
+            
+            End If
+            
+            For k = 1 To ColInd 'Column
+            
+            Debug.Print WB & "-" & "PA-Retail" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(4 + lastRow - k - J) & J + 1).Formula
+                NewForm = "-'[" & WB & ".Raw.xlsx]PA-XL'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & ")/(" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(4 + lastRow - k - J) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        'for PA-Comm
+        Set wsNP = wbNP.Worksheets("PA-Commercial")
+        lastRow = wsNP.Cells(wsNP.Rows.Count, 1).End(xlUp).Row - 1
+        
+        For J = 1 To 41
+            
+            For k = 1 To 42 - J 'Column
+            
+            Debug.Print WB & "-" & "PA-Commercial" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula
+                NewForm = "- '[" & WB & ".Prior.xlsx]PA'!" & ColumnLetter(k + 2) & J + 1 & " * IFERROR(" & Anchor & ".Raw.xlsx]PA-XL'!" & ColumnLetter(k + 2) & J + 1 & " / (" & Anchor & ".Raw.xlsx]PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & "), 0)" & _
+                "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & ") / (" & Anchor & WB & ".Raw.xlsx]PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        For J = 1 To 45 'Row
+            
+            If J > 42 Then
+            
+                ColInd = 4 + 42 - J
+            
+            Else
+                
+                ColInd = 4
+            
+            End If
+            
+            For k = 1 To ColInd 'Column
+            
+            Debug.Print WB & "-" & "PA-Commercial" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(2 + 47 - k - J) & J + 1).Formula
+                NewForm = "-'[" & WB & ".Raw.xlsx]PA-XL'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & _
+                "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & ")/(" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(2 + 47 - k - J) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        For J = 1 To lastRow 'Row
+            
+            If J > 46 Then
+            
+                ColInd = lastRow + 1 - J
+            
+            Else
+                
+                ColInd = lastRow - 45
+            
+            End If
+            
+            For k = 1 To ColInd 'Column
+            
+            Debug.Print WB & "-" & "PA-Commercial" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(4 + lastRow - k - J) & J + 1).Formula
+                NewForm = "-'[" & WB & ".Raw.xlsx]PA-XL'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & ")/(" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(4 + lastRow - k - J) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        
+        'for Travel-Retail
+        Set wsNP = wbNP.Worksheets("Travel-Retail")
+        lastRow = wsNP.Cells(wsNP.Rows.Count, 1).End(xlUp).Row - 1
+        
+        For J = 1 To 41
+            
+            For k = 1 To 42 - J 'Column
+            
+            Debug.Print WB & "-" & "Travel-Retail" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula
+                NewForm = "- '[" & WB & ".Prior.xlsx]PA'!" & ColumnLetter(k + 2) & J + 1 & " * IFERROR(" & Anchor & ".Raw.xlsx]PA-XL'!" & ColumnLetter(k + 2) & J + 1 & " / (" & Anchor & ".Raw.xlsx]PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & "), 0)" & _
+                "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & ") / (" & Anchor & WB & ".Raw.xlsx]PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        For J = 1 To 45 'Row
+            
+            If J > 42 Then
+            
+                ColInd = 4 + 42 - J
+            
+            Else
+                
+                ColInd = 4
+            
+            End If
+            
+            For k = 1 To ColInd 'Column
+            
+            Debug.Print WB & "-" & "Travel-Retail" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(2 + 47 - k - J) & J + 1).Formula
+                NewForm = "-'[" & WB & ".Raw.xlsx]PA-XL'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & _
+                "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & ")/(" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(2 + 47 - k - J) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        For J = 1 To lastRow 'Row
+        
+            If J > 46 Then
+            
+                ColInd = lastRow + 1 - J
+            
+            Else
+                
+                ColInd = lastRow - 45
+            
+            End If
+            
+            For k = 1 To ColInd 'Column
+            
+            Debug.Print WB & "-" & "Travel-Retail" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(4 + lastRow - k - J) & J + 1).Formula
+                NewForm = "-'[" & WB & ".Raw.xlsx]PA-XL'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & ")/(" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(4 + lastRow - k - J) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        
+        'for Travel-Commercial
+        Set wsNP = wbNP.Worksheets("Travel-Commercial")
+        lastRow = wsNP.Cells(wsNP.Rows.Count, 1).End(xlUp).Row - 1
+        
+        For J = 1 To 41
+            
+            For k = 1 To 42 - J 'Column
+            
+            Debug.Print WB & "-" & "Travel-Commercial" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula
+                NewForm = "- '[" & WB & ".Prior.xlsx]PA'!" & ColumnLetter(k + 2) & J + 1 & " * IFERROR(" & Anchor & ".Raw.xlsx]PA-XL'!" & ColumnLetter(k + 2) & J + 1 & " / (" & Anchor & ".Raw.xlsx]PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]PA-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & ".Raw.xlsx]Various-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & "), 0)" & _
+                "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & ") / (" & Anchor & WB & ".Raw.xlsx]PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!" & ColumnLetter(k + 2) & J + 1 & " + " & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!" & ColumnLetter(k + 2) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(k + 2) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        For J = 1 To 45 'Row
+            
+            If J > 42 Then
+            
+                ColInd = 4 + 42 - J
+            
+            Else
+                
+                ColInd = 4
+            
+            End If
+            
+            For k = 1 To ColInd 'Column
+            
+            Debug.Print WB & "-" & "Travel-Commercial" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(2 + 47 - k - J) & J + 1).Formula
+                NewForm = "-'[" & WB & ".Raw.xlsx]PA-XL'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & _
+                "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & ")/(" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Travel-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Retail'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!$" & ColumnLetter(2 + 47 - k - J) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(2 + 47 - k - J) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        For J = 1 To lastRow 'Row
+        
+            If J > 46 Then
+            
+                ColInd = lastRow + 1 - J
+            
+            Else
+                
+                ColInd = lastRow - 45
+            
+            End If
+            
+            For k = 1 To ColInd 'Column
+            
+            Debug.Print WB & "-" & "Travel-Commercial" & "-j:" & J & "-k:" & k
+            
+                OldForm = wsNP.Range(ColumnLetter(4 + lastRow - k - J) & J + 1).Formula
+                NewForm = "-'[" & WB & ".Raw.xlsx]PA-XL'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "*IFERROR((" & Anchor & WB & ".Raw.xlsx]PA-Travel-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-Travel-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & ")/(" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]PA-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Retail'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "+" & Anchor & WB & ".Raw.xlsx]Various-PA-Commercial'!$" & ColumnLetter(4 + lastRow - k - J) & J + 1 & "),0)"
+                ConForm = OldForm & NewForm
+                wsNP.Range(ColumnLetter(4 + lastRow - k - J) & J + 1).Formula = ConForm
+                
+            Next k
+
+        Next J
+        
+        Application.Calculation = xlCalculationAutomatic
+        
+        wbNP.Save
+        
+        wbNP.Close SaveChanges:=False
+        wbR.Close SaveChanges:=False
+        wbP.Close SaveChanges:=False
+        wbF.Close SaveChanges:=False
+
+    Next WB
+        
+    
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+    
+    Application.Speech.Speak "Done"
+    MsgBox "Done"
+
+End Sub
+
+
+
+Function ColumnLetter(ColumnNumber As Integer) As String
+    Dim Letter As String
+    Letter = ""
+
+    ' Repeat the process of dividing by 26 to get the column letters
+    Do While ColumnNumber > 0
+        Letter = Chr(((ColumnNumber - 1) Mod 26) + 65) & Letter
+        ColumnNumber = (ColumnNumber - 1) \ 26
+    Loop
+    
+    ColumnLetter = Letter
+End Function
+
+
