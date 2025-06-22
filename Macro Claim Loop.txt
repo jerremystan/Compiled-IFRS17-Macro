@@ -1,0 +1,155 @@
+Private Const FolderPath = "D:\Stanley\Tugas IFRS17\ Reserving Macro Automation\\202406\Compiled IFRS17\"
+
+Private Const StartYear = "2009"
+Private Const EndYear = "2023"
+
+
+
+Sub ExcelChecker()
+    Application.Calculation = xlCalculationManual
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    
+    Dim wsr          As Worksheet
+    Dim wbr          As Workbook
+    'Dim ws          As Worksheet
+    Dim Year         As Integer
+    Dim newWB        As Workbook
+    Dim newWS        As Worksheet
+    Dim addWB        As Workbook
+    Dim addWS        As Worksheet
+    Dim wst          As Worksheet
+    Dim startFormula As String
+    Dim endFormula   As String
+    Dim newFormula   As String
+    Dim lastRow      As Integer
+    Dim wsrc         As Worksheet
+    Dim wbrc         As Workbook
+    Dim fileName     As Variant
+    Dim TermArr      As Variant
+    Dim k            As Integer
+    Dim totalSheets  As Integer
+    Dim sheetNames   As Variant
+    
+    Set wst = ThisWorkbook.Sheets("Sheet1")
+    
+    lastRow = wst.Cells(wst.Rows.Count, 1).End(xlUp).Row - 1
+    
+    'MsgBox lastRow
+    
+    TermArr = Array("ST", "LT")
+    fileName = Array("OSClaim-Gross")
+    'fileName = Array("OSClaim-Gross", "OSClaim-Net", "PaidClaim-Gross", "PaidClaim-Net")
+    
+    sheetNames = Array("Marine-ECommerce", "Liability", "PA-Retail", "Travel-Retail", "Trade Credit", "Various", "Health", "Various-Ecommerce")
+    'sheetNames = Array("Auto", "Auto-OD-PartialLoss", "Auto-OD-TotalLoss-MotorCycle", "Auto-OD-TotalLoss-NonMotorCycle", "Auto-TP", "Engineering", "Fire", "Marine-Other", "Marine-ECommerce", "Liability", "PA-Retail", "PA-Commercial", "Travel-Commercial", "Travel-Retail", "Trade Credit", "Various", "Health", "Various-Ecommerce", "Check")
+    
+    'MsgBox ColumnLetter(60)
+
+    For Each FN In fileName
+        
+        
+        
+        Set newWB = Workbooks.Add
+        'Set wbr = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro Checker for Compiled Files\" & FN & ".xlsx", UpdateLinks:=0)
+        'Set wbrc = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro Checker for Compiled Files\" & FN & " - Copy.xlsx", UpdateLinks:=0)
+        
+
+        
+        
+        
+'        For k = 1 To totalSheets
+'
+'            sheetNames(k) = wbrc.Sheets(k).Name
+'
+'        Next k
+
+        For Each SN In sheetNames
+
+            For i = 1 To lastRow
+
+                For j = 1 To lastRow + 1 - i
+                    
+                    wst.Cells(i + 1, j + 2).Formula = "='[" & FN & ".xlsx]" & SN & "'!RC"
+                    
+                    Debug.Print "Total All" & FN & SN & "-" & i & "-" & j
+                    
+                Next j
+
+            Next i
+
+            Set newWS = newWB.Sheets.Add(After:=newWB.Sheets(newWB.Sheets.Count))
+            newWS.Name = SN
+
+            wst.Range("A1:" & ColumnLetter(lastRow + 2) & lastRow + 1).Copy
+            newWS.Range("A1:" & ColumnLetter(lastRow + 2) & lastRow + 1).PasteSpecial Paste:=xlPasteAll
+
+        Next SN
+        
+        
+        For Each SN In sheetNames
+            
+            Set addWS = newWB.Sheets(SN)
+            
+            For i = 1 To lastRow
+
+                For j = 1 To lastRow + 1 - i
+                    
+                    For Year = StartYear To EndYear
+    
+                        For Each Term In TermArr
+                    
+                            startFormula = addWS.Cells(i + 1, j + 2).Formula
+                            newFormula = "-'" & FolderPath & Year & "-" & Term & "\[" & FN & ".xlsx]" & SN & "'!RC"
+                            endFormula = startFormula & newFormula
+                            addWS.Cells(i + 1, j + 2).Formula = endFormula
+                            
+                            Debug.Print "Detail All" & FN & SN & Year & Term & "-" & i & "-" & j
+                        
+                        Next Term
+        
+                    Next Year
+                        
+                Next j
+
+            Next i
+
+        Next SN
+        
+        
+        
+        newWB.Sheets("Sheet1").Delete
+        'newWB.Sheets("Fire-XL").Delete
+        
+        
+        
+        newWB.SaveAs fileName:=FolderPath & FN & " - Checker Set2.v.1.xlsx", FileFormat:=51
+        
+        'wbr.Close SaveChanges:=False
+        'wbrc.Close SaveChanges:=False
+        
+        newWB.Close SaveChanges:=False
+
+
+    Next FN
+    
+    MsgBox "Done"
+    
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+End Sub
+
+Function ColumnLetter(ColumnNumber As Integer) As String
+    Dim Letter As String
+    Letter = ""
+
+    ' Repeat the process of dividing by 26 to get the column letters
+    Do While ColumnNumber > 0
+        Letter = Chr(((ColumnNumber - 1) Mod 26) + 65) & Letter
+        ColumnNumber = (ColumnNumber - 1) \ 26
+    Loop
+    
+    ColumnLetter = Letter
+End Function
+
