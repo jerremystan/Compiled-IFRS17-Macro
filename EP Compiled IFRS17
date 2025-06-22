@@ -1,0 +1,111 @@
+Private Const ValDate = "202412"
+Private Const Anchor = "'\\[Location]\" & ValDate & "\Compiled\[Earned Premium.Raw.xlsx]EP'!"
+
+Sub ConcatFormEP()
+
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    
+        Dim ws As Worksheet
+        Dim lastRow As Integer
+        Dim OldForm As String
+        Dim NewForm As String
+        Dim ConForm As String
+        Dim XLArr As Variant
+        Dim XLInd As Variant
+        Dim RawArr As Variant
+        
+        Dim wbR As Workbook
+        Dim wbM As Workbook
+        Dim wbP As Workbook
+        
+        XLArr = Array("O", "P", "Q", "R", "S", "Y", "Z", "AD")
+        XLInd = Array(15, 16, 17, 18, 19, 25, 26, 30)
+        RawArr = Array("BD", "AZ", "AB", "BH", "BF", "BJ", "AT", "BB")
+        
+        Set ws = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro making Net wo Non Proportional\Earned Premium - wo XL.xlsx", UpdateLinks:=0).Sheets("EP")
+        Set wbR = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro making Net wo Non Proportional\Earned Premium.Raw.xlsx", UpdateLinks:=0)
+        Set wbM = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro making Net wo Non Proportional\Earned Premium.Manual.xlsx", UpdateLinks:=0)
+        Set wbP = Workbooks.Open("D:\Stanley\Tugas IFRS17\Macro making Net wo Non Proportional\Earned Premium.Prior.xlsx", UpdateLinks:=0)
+        
+        lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row - 2
+        
+        For i = 0 To UBound(XLArr)
+            
+            For J = 1 To lastRow
+            
+                OldForm = ws.Range(XLArr(i) & J + 2).Formula
+                NewForm = "-'[Earned Premium.Raw.xlsx]EP'!$" & RawArr(i) & J + 2
+                ConForm = OldForm & NewForm
+                
+                ws.Range(XLArr(i) & J + 2).Formula = ConForm
+            
+            Next J
+        
+        Next i
+        
+        'PA-Retail
+        For J = 1 To lastRow
+        
+            OldForm = ws.Range("U" & 2 + J).Formula
+            NewForm = "- " & "'[Earned Premium.Raw.xlsx]EP'!" & "$AJ" & 2 + J & "*(" & Anchor & "$AF" & 2 + J & "+ " & Anchor & "$AM" & 2 + J & ")/(SUM(" & Anchor & "$AF" & 2 + J & ":AG" & 2 + J & ")+SUM(" & Anchor & "$AM" & 2 + J & ":AN" & 2 + J & "))"
+            ConForm = OldForm & NewForm
+            ws.Range("U" & 2 + J).Formula = ConForm
+            
+        Next J
+        
+        'PA-Commercial
+        For J = 1 To lastRow
+        
+            OldForm = ws.Range("V" & 2 + J).Formula
+            NewForm = "- " & "'[Earned Premium.Raw.xlsx]EP'!" & "$AJ" & 2 + J & "*(" & Anchor & "$AG" & 2 + J & "+ " & Anchor & "$AN" & 2 + J & ")/(SUM(" & Anchor & "$AF" & 2 + J & ":AG" & 2 + J & ")+SUM(" & Anchor & "$AM" & 2 + J & ":AN" & 2 + J & "))"
+            ws.Range("V" & 2 + J).Formula = OldForm & NewForm
+            
+        Next J
+        
+        'Travel-Retail
+        For J = 1 To lastRow
+        
+            OldForm = ws.Range("W" & 2 + J).Formula
+            NewForm = "- " & "'[Earned Premium.Raw.xlsx]EP'!" & "$AR" & 2 + J & "*(" & Anchor & "$AH" & 2 + J & "+ " & Anchor & "$AP" & 2 + J & ")/(SUM(" & Anchor & "$AH" & 2 + J & ":AI" & 2 + J & ")+SUM(" & Anchor & "$AP" & 2 + J & ":AQ" & 2 + J & "))"
+            ws.Range("W" & 2 + J).Formula = OldForm & NewForm
+            
+        Next J
+        
+        'Travel-Commercial
+        For J = 1 To lastRow
+        
+            OldForm = ws.Range("X" & 2 + J).Formula
+            NewForm = "- " & "'[Earned Premium.Raw.xlsx]EP'!" & "$AR" & 2 + J & "*(" & Anchor & "$AI" & 2 + J & "+ " & Anchor & "$AQ" & 2 + J & ")/(SUM(" & Anchor & "$AH" & 2 + J & ":AI" & 2 + J & ")+SUM(" & Anchor & "$AP" & 2 + J & ":AQ" & 2 + J & "))"
+            ws.Range("X" & 2 + J).Formula = OldForm & NewForm
+            
+        Next J
+    
+    
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    
+    Beep
+    MsgBox "Done"
+
+
+End Sub
+
+
+
+Function ColumnLetter(ColumnNumber As Integer) As String
+    Dim Letter As String
+    Letter = ""
+
+    ' Repeat the process of dividing by 26 to get the column letters
+    Do While ColumnNumber > 0
+        Letter = Chr(((ColumnNumber - 1) Mod 26) + 65) & Letter
+        ColumnNumber = (ColumnNumber - 1) \ 26
+    Loop
+    
+    ColumnLetter = Letter
+End Function
+
+
+
+
